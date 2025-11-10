@@ -1,22 +1,17 @@
 '''
-<yourUWNetID>_KInARow.py
-Authors: <your name(s) here, lastname first and partners separated by ";">
+javiergd_KInARow.py
+Authors: Guapilla-Diaz, Javier; Zhang, Ivonne
   Example:  
-    Authors: Smith, Jane; Lee, Laura
+    Authors: Guapilla-Diaz, Javier; Zhang, Ivonne
 
 An agent for playing "K-in-a-Row with Forbidden Squares" and related games.
 CSE 415, University of Washington
-
-THIS IS A TEMPLATE WITH STUBS FOR THE REQUIRED FUNCTIONS.
-YOU CAN ADD WHATEVER ADDITIONAL FUNCTIONS YOU NEED IN ORDER
-TO PROVIDE A GOOD STRUCTURE FOR YOUR IMPLEMENTATION.
-
 '''
 
 from agent_base import KAgent
 from game_types import State, Game_Type
 
-AUTHORS = 'Javier Guapilla-Diaz and Ivonne Zhang'
+AUTHORS = 'Javier Guapilla-Diaz; Ivonne Zhang'
 UWNETIDS = ['javiergd', 'yimenz5'] # The first UWNetID here should
 # match the one in the file name, e.g., janiesmith99_KInARow.py.
 
