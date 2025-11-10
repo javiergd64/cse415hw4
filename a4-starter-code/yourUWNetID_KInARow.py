@@ -16,8 +16,8 @@ TO PROVIDE A GOOD STRUCTURE FOR YOUR IMPLEMENTATION.
 from agent_base import KAgent
 from game_types import State, Game_Type
 
-AUTHORS = 'Jane Smith and Laura Lee' 
-UWNETIDS = ['janiesmith99', 'laura2039'] # The first UWNetID here should
+AUTHORS = 'Javier Guapilla-Diaz and Ivonne Zhang'
+UWNETIDS = ['javiergd', 'yimenz5'] # The first UWNetID here should
 # match the one in the file name, e.g., janiesmith99_KInARow.py.
 
 import time # You'll probably need this to avoid losing a
