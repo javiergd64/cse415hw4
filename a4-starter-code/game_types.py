@@ -118,7 +118,7 @@ Cassini = Game_Type("Cassini (5 in a row that does not hit Saturn)",
 
 def test():
     global GAME_TYPE
-    GAME_TYPE = Cassini
+    GAME_TYPE = TTT
     print(GAME_TYPE.initial_state)
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ Authors: Guapilla-Diaz, Javier; Zhang, Ivonne
 An agent for playing "K-in-a-Row with Forbidden Squares" and related games.
 CSE 415, University of Washington
 '''
+from mpmath.functions.zetazeros import count_to
 
 from agent_base import KAgent
 from game_types import State, Game_Type
@@ -113,7 +114,73 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         print('calling static_eval. Its value needs to be computed!')
         # Values should be higher when the states are better for X,
         # lower when better for O.
-        return 0
+
+        board = state.board
+        # check the current game type
+        if game_type is None:
+            k = self.current_game_type.k
+        else:
+            k = game_type.k
+        n = board.n # row
+        m = board.m # column
+        score = 0 # initialize score
+
+        # helper for rows and columns checks
+        def helper_check(seq):
+            nonlocal score
+            count = 0
+            current = None
+            for token in seq + ['$']: # dummie node to end the loop
+                if token == current and token in ['X', 'O']:
+                    count += 1
+                else:
+                    if current == 'X':
+                        score += 10 ** count
+                    elif current == 'O':
+                        score -= 10 ** count
+                    current = token
+                    count = 1 if token in ['X', 'O'] else 0
+
+        # traverse through the rows
+        for i in range(n):
+            helper_check(board[i])
+        # traverse through the columns
+        for j in range(m):
+            helper_check([board[i, j] for i in range(n)])
+        # traverse through the diagonals
+        # down-right traverse
+        for row in range(n):
+            diag = []
+            i,j = row,0
+            while i < n and j < m:
+                diag.append(board[i, j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        for col in range(m):
+            diag = []
+            i,j = 0,col
+            while i < n and j < m:
+                diag.append(board[i, j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        # down-left traverse
+        for row in range(n):
+            diag = []
+            i,j = row,m-1
+            while i < n and j >= 0:
+                diag.append(board[i, j])
+                i,j = i+1,j-1
+            helper_check(diag)
+        for col in range(m-2, -1, -1):
+            diag = []
+            i,j = 0,col
+            while i < n and j >= 0:
+                diag.append(board[i, j])
+                i,j = i+1,j-1
+            helper_check(diag)
+
+        # return 0 if no winner
+        return score
  
 # OPTIONAL THINGS TO KEEP TRACK OF:
 
