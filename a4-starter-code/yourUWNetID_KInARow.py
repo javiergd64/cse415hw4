@@ -16,8 +16,10 @@ AUTHORS = 'Javier Guapilla-Diaz; Ivonne Zhang'
 UWNETIDS = ['javiergd', 'yimenz5'] # The first UWNetID here should
 # match the one in the file name, e.g., janiesmith99_KInARow.py.
 
-import time # You'll probably need this to avoid losing a
- # game due to exceeding a time limit.
+import time
+
+# You'll probably need this to avoid losing a
+# game due to exceeding a time limit.
 
 # Create your own type of agent by subclassing KAgent:
 
@@ -26,9 +28,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
 
     def __init__(self, twin=False):
         self.twin=twin
-        self.nickname = 'Nic'
+        self.nickname = 'Beep-Bop'
         if twin: self.nickname += '2'
-        self.long_name = 'Templatus Skeletus'
+        self.long_name = 'Beep-Boop-Bop'
         if twin: self.long_name += ' II'
         self.persona = 'bland'
         self.voice_info = {'Chrome': 10, 'Firefox': 2, 'other': 0}
@@ -41,9 +43,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.playing_mode = KAgent.DEMO
 
     def introduce(self):
-        intro = '\nMy name is Templatus Skeletus.\n'+\
-            '"An instructor" made me.\n'+\
-            'Somebody please turn me into a real game-playing agent!\n'
+        intro = '\nHey! My name is Beep-Bop\n'+\
+            'Javier (javiergd) & Ivonne (yimenz5)\n'+\
+            'Hopefully we have a good time playing!\n'
         if self.twin: intro += "By the way, I'm the TWIN.\n"
         return intro
 
