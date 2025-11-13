@@ -16,7 +16,7 @@ from game_types import State, Game_Type
 # I forgot to change its argument of:
 # news = game_types.State to just State
 from random import randint # for the random choosing (before mM or ab)
-GAME_TYPE = None
+#GAME_TYPE = None not needed bc of GLOBAL in prepare
 
 AUTHORS = 'Javier Guapilla-Diaz; Ivonne Zhang'
 UWNETIDS = ['javiergd', 'yimenz5'] # The first UWNetID here should
