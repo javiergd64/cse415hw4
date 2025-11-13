@@ -80,6 +80,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
 
         ## -- i got this from random player to set up variables and stuff
         # I realized it was missing when the test wasnt working on the game master :,)
+        # from randomPlayer
         self.who_i_play = what_side_to_play
         self.opponent_nickname = opponent_nickname
         self.time_limit = expected_time_per_move
