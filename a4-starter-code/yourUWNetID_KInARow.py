@@ -43,8 +43,8 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.playing_mode = KAgent.DEMO
 
     def introduce(self):
-        intro = '\nHey! My name is Beep-Bop\n'+\
-            'Javier (javiergd) & Ivonne (yimenz5)\n'+\
+        intro = '\nHey! My name is Beep-Boop-Bop\n'+\
+            'Javier (javiergd) & Ivonne (yimenz5) made me\n'+\
             'Hopefully we have a good time playing!\n'
         if self.twin: intro += "By the way, I'm the TWIN.\n"
         return intro
