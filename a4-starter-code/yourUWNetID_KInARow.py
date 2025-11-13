@@ -172,8 +172,11 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             k = self.current_game_type.k
         else:
             k = game_type.k
-        n = board.n # row
-        m = board.m # column
+
+        n = len(board) # row
+        m = len(board[0]) # column
+        # I changed this to how its seen in the winTesterForK
+
         score = 0 # initialize score
 
         # helper for rows and columns checks
