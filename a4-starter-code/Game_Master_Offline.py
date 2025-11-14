@@ -184,8 +184,8 @@ def test():
     # If using only 1, create 2 instances of it, one of
     # which is a "twin".
 
-    #import yourUWNetID_KInARow as h
-    import RandomPlayer as h
+    import yourUWNetID_KInARow as h
+    #import RandomPlayer as h
     px = h.OurAgent()
     po = h.OurAgent(twin=True)
     set_players(px, po)
