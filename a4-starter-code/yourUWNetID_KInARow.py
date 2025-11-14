@@ -462,4 +462,3 @@ def do_move(state, i, j, o):
 #  OPPONENT_PAST_UTTERANCES = []
 #  UTTERANCE_COUNT = 0
 #  REPEAT_COUNT = 0 or a table of these if you are reusing different utterances
-
