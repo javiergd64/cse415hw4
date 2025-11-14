@@ -157,7 +157,10 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         if (special_static_eval_fn is not None):
             self.sf = special_static_eval_fn
 
-
+        # for the stats that we have to report
+        self.alpha_beta_cutoffs_this_turn = 0
+        self.num_static_evals_this_turn = 0
+        # note: i am not updating the zobrist vars bc not used rn
 
         # a list of places we can go, and the move associated
         possible_s, possible_m = successors_and_moves(current_state)
@@ -184,29 +187,22 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         new_s = possible_s[idx]
         new_m = best_move
 
+        # from agent_base btw
+        stats = [self.alpha_beta_cutoffs_this_turn,
+                 self.num_static_evals_this_turn,
+                 self.zobrist_table_num_entries_this_turn,
+                 self.zobrist_table_num_hits_this_turn]
+
         # utter = "TEST UTTERANCE" # for now cuz we will use llm?
         utter = self.generate_utterance(new_s, new_m, current_remark)
+
+        # our autograder case cuz it need stats
+        # 0 = demo, 1 = competitive, 2 = autograder
+        if self.playing_mode == 2:
+            return [[new_m, new_s] + stats, utter]
+
         # NOTE: I commented out cuz generate_utterance was crashing Game_Master
         return [[new_m, new_s], utter]
-
-        # --- OLD ---
-        # Kept it here in case we need to look over it or revert something
-
-        # print("make_move has been called")
-        #
-        # print("code to compute a good move should go here.")
-        # # Here's a placeholder:
-        # a_default_move = (0, 0) # This might be legal ONCE in a game,
-        # # if the square is not forbidden or already occupied.
-        #
-        # new_state = current_state # This is not allowed, and even if
-        # # it were allowed, the newState should be a deep COPY of the old.
-        #
-        # new_remark = "I need to think of something appropriate.\n" +\
-        # "Well, I guess I can say that this move is probably illegal."
-        #
-        # print("Returning from make_move")
-        # return [[a_default_move, new_state], new_remark]
 
 
     # next chunk
@@ -255,6 +251,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                 if (pruning and (alpha is not None)):
                     alpha = max(alpha, curr_val)
                     if (beta is not None and (alpha >= beta)):
+                        self.alpha_beta_cutoffs_this_turn += 1
                         break
             else: # O
                 if curr_val < best_val:
@@ -265,6 +262,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                 if (pruning and (beta is not None)):
                     beta = min(beta, curr_val)
                     if (alpha is not None and (beta <= alpha)):
+                        self.alpha_beta_cutoffs_this_turn += 1
                         break
 
         return [best_val, best_move]
@@ -282,6 +280,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # in static_eval, you were using like board[i,j] but that would only work if
         # our board was np.array, but I fixed it to the normal board[i][j] which
         # works whenever.
+        self.num_static_evals_this_turn += 1
 
         board = state.board
         # check the current game type
