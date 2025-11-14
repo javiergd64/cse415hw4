@@ -151,8 +151,13 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                   special_static_eval_fn=None):
 
         ## for autograder thingy:
-        ## I AM WORKING ON THIS
         ## add something to account for autograder function
+        self.sf = self.static_eval
+
+        if (special_static_eval_fn is not None):
+            self.sf = special_static_eval_fn
+
+
 
         # a list of places we can go, and the move associated
         possible_s, possible_m = successors_and_moves(current_state)
@@ -218,12 +223,12 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
 
         # base case
         if depth_remaining == 0:
-            return (self.static_eval(state), None)
+            return (self.sf(state), None)
 
         possible_s, possible_m = successors_and_moves(state)
 
         if (len(possible_s) == 0):
-            return (self.static_eval(state), None)
+            return (self.sf(state), None)
 
         # checking whose move it is
         if (state.whose_move == 'X'):
@@ -349,7 +354,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         return score
 
     def build_prompt(self, state, move, current_remark):
-        score = self.static_eval(state)
+        score = self.sf(state)
         return [
             {
                 "type": "message",
