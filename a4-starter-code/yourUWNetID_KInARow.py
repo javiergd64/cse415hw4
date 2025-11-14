@@ -1,13 +1,14 @@
 '''
 javiergd_KInARow.py
 Authors: Guapilla-Diaz, Javier; Zhang, Ivonne
-  Example:  
+  Example:
     Authors: Guapilla-Diaz, Javier; Zhang, Ivonne
 
 An agent for playing "K-in-a-Row with Forbidden Squares" and related games.
 CSE 415, University of Washington
 '''
-from mpmath.functions.zetazeros import count_to
+# from mpmath.functions.zetazeros import count_to
+# from pythonjsonlogger.msgspec import msgspec_default
 
 from agent_base import KAgent
 from game_types import State, Game_Type
@@ -76,7 +77,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # ---------Below added some initialization for the LLM ---------
         self.use_llm = False
         self.utterances_matter = True
-        self.openai_client = None
+        self.genai = None
 
     def introduce(self):
         intro = '\nHey! My name is Beep-Boop-Bop\n'+\
@@ -103,7 +104,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         #     pass
             # Optionally, import your LLM API here.
             # Then you can use it to help create utterances.
-           
+
         # Write code to save the relevant information in variables
         # local to this instance of the agent.
         # Game-type info can be in global variables.
@@ -125,25 +126,27 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.utt_count = 0
         if self.twin: self.utt_count = 5  # Offset the twin's utterances.
 
-        # --------- LLM API integration ----------
         if utterances_matter:
-            # Optionally, import your LLM API here.
-            # Then you can use it to help create utterances.
             try:
-                from openai import OpenAI
-                self.openai_client = OpenAI()
+                import google.generativeai as genai
+                genai.configure(api_key="AIzaSyA6OacwuB1pG5cbbLTjFdxaMFucWDueGBw")
+                self.genai = genai
                 self.use_llm = True
+                print("Gemini initialized!")
             except Exception as e:
-                print("LLM initiation failed with", e)
+                print("Gemini init failed:", e)
+                self.genai = None
                 self.use_llm = False
-
-       # print("Change this to return 'OK' when ready to test the method.")
+        else:
+            self.genai = None
+            self.use_llm = False
+        # print("Change this to return 'OK' when ready to test the method.")
         return "OK" #"Not-OK"
 
     # working on this first -j
     # note for ivonne: I used the random player for layout and initial
     # "test" of randomness
-    # The core of your agent's ability should be implemented here:             
+    # The core of your agent's ability should be implemented here:
     def make_move(self, current_state, current_remark, time_limit=1000,
                   use_alpha_beta=True, #True, uncomment for later
                   use_zobrist_hashing=False, max_ply=3,
@@ -155,12 +158,12 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # a list of places we can go, and the move associated
         possible_s, possible_m = successors_and_moves(current_state)
         # S is state and M is move
-        
+
         # successors empty = can't go anywhere, so cant do anything
         if (len(possible_s) == 0):
             utter = "Welp, I'm cornered"
             return [[None, current_state], utter]
-        
+
         # this is to test w/o minimax or ab, so like random
         # new_S, new_M = chooseMove((possible_s, possible_m))
 
@@ -176,9 +179,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         idx = possible_m.index(best_move)
         new_s = possible_s[idx]
         new_m = best_move
-        
-        utter = "TEST UTTERANCE" # for now cuz we will use llm?
-        #utter = generate_utterance(new_s, new_m, current_remark)
+
+        # utter = "TEST UTTERANCE" # for now cuz we will use llm?
+        utter = self.generate_utterance(new_s, new_m, current_remark)
         # NOTE: I commented out cuz generate_utterance was crashing Game_Master
         return [[new_m, new_s], utter]
 
@@ -346,19 +349,17 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # return 0 if no winner
         return score
 
-def build_prompt(self, state, move, current_remark):
-    score = self.static_eval(state, current_remark)
-    return [
+    def build_prompt(self, state, move, current_remark):
+        score = self.static_eval(state)
+        return [
             {
                 "type": "message",
                 "role": "developer",
                 "content": (
-                    {
                         "You are Beep-Boop-Bop, a playful, nerdy robot agent "
                         "created by Javier (javiergd) and Ivonne (yimenz5). "
                         "You always speak in one short, witty sentence. "
                         "Never break character. Never mention being an AI model."
-                    }
                 )
             },
             {
@@ -370,51 +371,38 @@ def build_prompt(self, state, move, current_remark):
                     "Respond with exactly one short sentence in character."
                 )
             }
-    ]
+        ]
 
-#     Decide what to say this turn based on:
-#     - opponent's last remark
-#     - current board evaluation
-#     - search stats for this turn
-#     - persona + variation
-def generate_utterance(self, state, move, current_remark):
-    # record opponent's remark
-    if current_remark:
-        self.oppent_past_utterances.append(current_remark)
-    lower = current_remark.lower() if isinstance(current_remark, str) else ""
+    def generate_utterance(self, state, move, current_remark):
+        if not self.utterances_matter:
+            return "OK"
 
-    # quick response
-    if "hello" in lower or "hi" in lower:
-        utter = "Hiiiiiiiii human!"
-    elif "gg" in lower or "good game" in lower:
-        utter = "Good game! It's great to test out your IQ hehehe ;P"
-    else:
-        # evaluate the score and set a tone
-        score = self.static_eval(state, self.current_game_type)
-        if score > 0:
-            base = self.confident_lines
-        elif score < 0:
-            base = self.defensive_lines
-        else:
-            base = self.generic_lines
+        if not self.use_llm:
+            return "Beep boop! Running evaluations."
 
-        if self.alpha_beta_cutoffs_this_turn >= 0 and self.num_static_evals_this_turn >= 0:
-            # the purpose of the following 8 lines is to generate a statistic note once in a while (every three utts)
-            # and use each of the stats_lines in turns
-            if self.utt_count % 3 == 0:
-                template = self.stats_lines[self.utt_count % len(self.stats_lines)]
-                utter = template.format(
-                    evals = self.num_static_evals_this_turn,
-                    cuts = self.alpha_beta_cutoffs_this_turn
-                )
-            else:
-                utter = base[self.utt_count % len(base)]
-        else:
-            utter = base[self.utt_count % len(base)]
+        prompt = (
+            "You are Beep-Boop-Bop, a playful, nerdy robot created by Javier and Ivonne. "
+            "Always respond in ONE short, witty sentence.\n"
+            "Let the conversation be aggressive.\n"
+            f"Opponent said: '{current_remark}'.\n"
+            f"Your move: {move}.\n"
+            "Reply in character:"
+        )
 
-    self.my_past_utterances.append(utter)
-    self.utt_count += 1
-    return utter
+        try:
+            model = self.genai.GenerativeModel("models/gemini-2.5-flash")
+            response = model.generate_content(prompt)
+
+            if hasattr(response, "text") and response.text:
+                utter = response.text.strip()
+                if utter:
+                    return utter
+
+            return "Beep boop! My wires got crossed."
+
+        except Exception as e:
+            print("Gemini utterance error:", type(e).__name__, e)
+            return "Beep boop! Running evaluations."
 
 
 # OPTIONAL THINGS TO KEEP TRACK OF:

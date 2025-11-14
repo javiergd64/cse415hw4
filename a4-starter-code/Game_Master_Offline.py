@@ -110,7 +110,7 @@ def runGame():
         move, currentState = moveAndState
         moveReport = "Move is by "+who+" to "+str(move)
         renderCommentary(moveReport)
-        utteranceReport = name +' says: '+currentRemark
+        utteranceReport = name +' says: '+ currentRemark
         renderCommentary(utteranceReport)
         if USE_HTML: gameToHTML.reportResult(moveReport)
         if USE_HTML: gameToHTML.reportResult(utteranceReport)
