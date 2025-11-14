@@ -38,6 +38,8 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.long_name = 'Beep-Boop-Bop'
         if twin: self.long_name += ' II'
         self.persona = 'bland'
+
+        # PRE-LLM
         # some quick lines for prompts, will be used in generate_utterance
         self.generic_lines = [
             "Beep boop… thinking about grids again.",
@@ -59,6 +61,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             "This turn cost me {evals} evals and {cuts} cutoffs. Worth it.",
             "My alpha-beta engine pruned {cuts} possibilities this move."
         ]
+
         self.voice_info = {'Chrome': 10, 'Firefox': 2, 'other': 0}
         self.playing = "don't know yet" # e.g., "X" or "O".
         self.alpha_beta_cutoffs_this_turn = -1
@@ -67,12 +70,12 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.zobrist_table_num_hits_this_turn = -1
         self.current_game_type = None
         self.playing_mode = KAgent.DEMO
-        # ---------Below added some initialization, also copied some from random player----------
+        # more initialization from random plater
         self.my_past_utterances = None
         self.opponent_past_utterances = None
         self.utt_count = None
         self.repeat_count = None
-        # ---------Below added some initialization for the LLM ---------
+        # for LLM use???
         self.use_llm = False
         self.utterances_matter = True
         self.genai = None
@@ -107,9 +110,6 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # local to this instance of the agent.
         # Game-type info can be in global variables.
 
-        ## -- i got this from random player to set up variables and stuff
-        # I realized it was missing when the test wasnt working on the game master :,)
-        # from randomPlayer
         self.who_i_play = what_side_to_play
         self.opponent_nickname = opponent_nickname
         self.time_limit = expected_time_per_move
@@ -196,12 +196,11 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # utter = "TEST UTTERANCE" # for now cuz we will use llm?
         utter = self.generate_utterance(new_s, new_m, current_remark)
 
-        # our autograder case cuz it need stats
+        # for autograder case cuz it need stats
         # 0 = demo, 1 = competitive, 2 = autograder
         if self.playing_mode == 2:
             return [[new_m, new_s] + stats, utter]
 
-        # NOTE: I commented out cuz generate_utterance was crashing Game_Master
         return [[new_m, new_s], utter]
 
 
@@ -410,7 +409,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
 
 # OPTIONAL THINGS TO KEEP TRACK OF:
 
-# THESE I GOT FROM RANDOM PLAYER (they seemed useful):
+# THESE I GOT FROM RANDOM PLAYER (they seemed useful, at least initially):
 def other(p):
     if p=='X': return 'O'
     return 'X'
