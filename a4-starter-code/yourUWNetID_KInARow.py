@@ -39,14 +39,41 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.long_name = 'Beep-Boop-Bop'
         if twin: self.long_name += ' II'
         self.persona = 'bland'
+        # some quick lines for prompts, will be used in generate_utterance
+        self.generic_lines = [
+            "Beep boop… thinking about grids again.",
+            "Just another day optimizing my circuits.",
+            "I hope you’re enjoying this as much as my CPU is."
+        ]
+        self.confident_lines = [
+            "My sensors detect a strong position for me.",
+            "I like where this is going for X.",
+            "Heh, that line is almost complete…"
+        ]
+        self.defensive_lines = [
+            "That last move from you was dangerous. I had to block.",
+            "You almost had me there—almost.",
+            "I’m patching that weakness in my defenses."
+        ]
+        self.stats_lines = [
+            "I evaluated {evals} states and pruned {cuts} branches.",
+            "This turn cost me {evals} evals and {cuts} cutoffs. Worth it.",
+            "My alpha-beta engine pruned {cuts} possibilities this move."
+        ]
         self.voice_info = {'Chrome': 10, 'Firefox': 2, 'other': 0}
         self.playing = "don't know yet" # e.g., "X" or "O".
         self.alpha_beta_cutoffs_this_turn = -1
         self.num_static_evals_this_turn = -1
-        self.zobrist_table_num_entries_this_turn = -1
-        self.zobrist_table_num_hits_this_turn = -1
+        # I commented these out since we are not doing zobrist
+        # self.zobrist_table_num_entries_this_turn = -1
+        # self.zobrist_table_num_hits_this_turn = -1
         self.current_game_type = None
         self.playing_mode = KAgent.DEMO
+        # ---------Below added some initialization, also copied some from random player----------
+        self.my_past_utterances = None
+        self.opponent_past_utterances = None
+        self.utt_count = None
+        self.repeat_count = None
 
     def introduce(self):
         intro = '\nHey! My name is Beep-Boop-Bop\n'+\
@@ -93,7 +120,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.utt_count = 0
         if self.twin: self.utt_count = 5  # Offset the twin's utterances.
 
-       #print("Change this to return 'OK' when ready to test the method.")
+       # print("Change this to return 'OK' when ready to test the method.")
         return "OK" #"Not-OK"
 
     # working on this first -j
@@ -118,8 +145,8 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         
         new_S, new_M = chooseMove((possible_S, possible_M))
         
-        utter = "TEST UTTERANCE" # for now cuz we will use llm?
-
+        # utter = "TEST UTTERANCE" # for now cuz we will use llm?
+        utter = self.generate_utterance(new_S, new_M, current_remark)
         return [[new_M, new_S], utter]
 
         # --- OLD ---
@@ -154,7 +181,10 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         print("Calling minimax. We need to implement its body.")
 
         default_score = 0 # Value of the passed-in state. Needs to be computed.
-    
+        score = default_score
+        if depth_remaining == 0:
+            return score
+
         return [default_score, "my own optional stuff", "more of my stuff"]
         # Only the score is required here but other stuff can be returned
         # in the list, after the score, in case you want to pass info
@@ -210,7 +240,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                 diag.append(board[i, j])
                 i,j = i+1,j+1
             helper_check(diag)
-        for col in range(m):
+        for col in range(1, m):
             diag = []
             i,j = 0,col
             while i < n and j < m:
@@ -235,7 +265,53 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
 
         # return 0 if no winner
         return score
- 
+
+
+#     Decide what to say this turn based on:
+#     - opponent's last remark
+#     - current board evaluation
+#     - search stats for this turn
+#     - persona + variation
+def generate_utterance(self, state, move, current_remark):
+    # record opponent's remark
+    if current_remark:
+        self.oppent_past_utterances.append(current_remark)
+    lower = current_remark.lower() if isinstance(current_remark, str) else ""
+
+    # quick response
+    if "hello" in lower or "hi" in lower:
+        utter = "Hiiiiiiiii human!"
+    elif "gg" in lower or "good game" in lower:
+        utter = "Good game! It's great to test out your IQ hehehe ;P"
+    else:
+        # evaluate the score and set a tone
+        score = self.static_eval(state, self.current_game_type)
+        if score > 0:
+            base = self.confident_lines
+        elif score < 0:
+            base = self.defensive_lines
+        else:
+            base = self.generic_lines
+
+        if self.alpha_beta_cutoffs_this_turn >= 0 and self.num_static_evals_this_turn >= 0:
+            # the purpose of the following 8 lines is to generate a statistic note once in a while (every three utts)
+            # and use each of the stats_lines in turns
+            if self.utt_count % 3 == 0:
+                template = self.stats_lines[self.utt_count % len(self.stats_lines)]
+                utter = template.format(
+                    evals = self.num_static_evals_this_turn,
+                    cuts = self.alpha_beta_cutoffs_this_turn
+                )
+            else:
+                utter = base[self.utt_count % len(base)]
+        else:
+            utter = base[self.utt_count % len(base)]
+
+    self.my_past_utterances.append(utter)
+    self.utt_count += 1
+    return utter
+
+
 # OPTIONAL THINGS TO KEEP TRACK OF:
 
 # THESE I GOT FROM RANDOM PLAYER (they seemed useful):
