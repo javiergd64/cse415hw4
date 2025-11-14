@@ -64,9 +64,8 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.playing = "don't know yet" # e.g., "X" or "O".
         self.alpha_beta_cutoffs_this_turn = -1
         self.num_static_evals_this_turn = -1
-        # I commented these out since we are not doing zobrist
-        # self.zobrist_table_num_entries_this_turn = -1
-        # self.zobrist_table_num_hits_this_turn = -1
+        self.zobrist_table_num_entries_this_turn = -1
+        self.zobrist_table_num_hits_this_turn = -1
         self.current_game_type = None
         self.playing_mode = KAgent.DEMO
         # ---------Below added some initialization, also copied some from random player----------
@@ -74,6 +73,10 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.opponent_past_utterances = None
         self.utt_count = None
         self.repeat_count = None
+        # ---------Below added some initialization for the LLM ---------
+        self.use_llm = False
+        self.utterances_matter = True
+        self.openai_client = None
 
     def introduce(self):
         intro = '\nHey! My name is Beep-Boop-Bop\n'+\
@@ -96,11 +99,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                                       # or something simple and quick to compute
                                       # and do not import any LLM or special APIs.
                                       # During the tournament, this will be False..
-        if utterances_matter:
-            pass
-            # Optionally, import your LLM API here.
-            # Then you can use it to help create utterances.
-           
+
         # Write code to save the relevant information in variables
         # local to this instance of the agent.
         # Game-type info can be in global variables.
@@ -119,6 +118,18 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.repeat_count = 0
         self.utt_count = 0
         if self.twin: self.utt_count = 5  # Offset the twin's utterances.
+
+        # --------- LLM API integration ----------
+        if utterances_matter:
+            # Optionally, import your LLM API here.
+            # Then you can use it to help create utterances.
+            try:
+                from openai import OpenAI
+                self.openai_client = OpenAI()
+                self.use_llm = True
+            except Exception as e:
+                print("LLM initiation failed with", e)
+                self.use_llm = False
 
        # print("Change this to return 'OK' when ready to test the method.")
         return "OK" #"Not-OK"
@@ -181,9 +192,6 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         print("Calling minimax. We need to implement its body.")
 
         default_score = 0 # Value of the passed-in state. Needs to be computed.
-        score = default_score
-        if depth_remaining == 0:
-            return score
 
         return [default_score, "my own optional stuff", "more of my stuff"]
         # Only the score is required here but other stuff can be returned
@@ -266,6 +274,32 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # return 0 if no winner
         return score
 
+
+def build_prompt(self, state, move, current_remark):
+    score = self.static_eval(state, current_remark)
+    return [
+            {
+                "type": "message",
+                "role": "developer",
+                "content": (
+                    {
+                        "You are Beep-Boop-Bop, a playful, nerdy robot agent "
+                        "created by Javier (javiergd) and Ivonne (yimenz5). "
+                        "You always speak in one short, witty sentence. "
+                        "Never break character. Never mention being an AI model."
+                    }
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Opponent said: '{current_remark}'.\n"
+                    f"Your last move: {move}.\n"
+                    f"Board heuristic score: {score}.\n"
+                    "Respond with exactly one short sentence in character."
+                )
+            }
+    ]
 
 #     Decide what to say this turn based on:
 #     - opponent's last remark
