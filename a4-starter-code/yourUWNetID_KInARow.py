@@ -151,6 +151,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                   special_static_eval_fn=None):
 
         ## for autograder thingy:
+        ## I AM WORKING ON THIS
         ## add something to account for autograder function
 
         # a list of places we can go, and the move associated
