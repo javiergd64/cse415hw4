@@ -177,8 +177,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         new_s = possible_s[idx]
         new_m = best_move
         
-        #utter = "TEST UTTERANCE" # for now cuz we will use llm?
-        utter = self.generate_utterance(new_s, new_m, current_remark)
+        utter = "TEST UTTERANCE" # for now cuz we will use llm?
+        #utter = generate_utterance(new_s, new_m, current_remark)
+        # NOTE: I commented out cuz generate_utterance was crashing Game_Master
         return [[new_m, new_s], utter]
 
         # --- OLD ---
