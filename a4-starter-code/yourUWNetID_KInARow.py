@@ -86,7 +86,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.time_limit = expected_time_per_move
         global GAME_TYPE
         GAME_TYPE = game_type
-        print("Oh, I love playing randomly at ", game_type.long_name)
+        self.current_game_type = game_type
+
+        print("Dang, I love playing", game_type.long_name)
         self.my_past_utterances = []
         self.opponent_past_utterances = []
         self.repeat_count = 0
@@ -101,26 +103,41 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
     # "test" of randomness
     # The core of your agent's ability should be implemented here:             
     def make_move(self, current_state, current_remark, time_limit=1000,
-                  use_alpha_beta=False, #True, uncomment for later
+                  use_alpha_beta=True, #True, uncomment for later
                   use_zobrist_hashing=False, max_ply=3,
                   special_static_eval_fn=None):
 
+        ## for autograder thingy:
+        ## add something to account for autograder function
+
         # a list of places we can go, and the move associated
-        possible_S, possible_M = successors_and_moves(current_state)
+        possible_s, possible_m = successors_and_moves(current_state)
         # S is state and M is move
         
         # successors empty = can't go anywhere, so cant do anything
-        if (len(possible_S) == 0):
+        if (len(possible_s) == 0):
             utter = "Welp, I'm cornered"
             return [[None, current_state], utter]
         
-        # this is to test w/o minimax or ab
-        
-        new_S, new_M = chooseMove((possible_S, possible_M))
+        # this is to test w/o minimax or ab, so like random
+        # new_S, new_M = chooseMove((possible_s, possible_m))
+
+        # using mm and ab
+        alpha = None
+        beta = None
+
+        if use_alpha_beta:
+            alpha = float('-inf')
+            beta = float('inf')
+
+        value, best_move = self.minimax(current_state, max_ply, use_alpha_beta, alpha, beta)
+        idx = possible_m.index(best_move)
+        new_s = possible_s[idx]
+        new_m = best_move
         
         utter = "TEST UTTERANCE" # for now cuz we will use llm?
 
-        return [[new_M, new_S], utter]
+        return [[new_m, new_s], utter]
 
         # --- OLD ---
         # Kept it here in case we need to look over it or revert something
@@ -151,20 +168,70 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             pruning=False,
             alpha=None,
             beta=None):
-        print("Calling minimax. We need to implement its body.")
+        #print("Calling minimax. We need to implement its body.")
+        # default_score = 0 # Value of the passed-in state. Needs to be computed.
 
-        default_score = 0 # Value of the passed-in state. Needs to be computed.
-    
-        return [default_score, "my own optional stuff", "more of my stuff"]
+        # base case
+        if depth_remaining == 0:
+            return (self.static_eval(state), None)
+
+        possible_s, possible_m = successors_and_moves(state)
+
+        if (len(possible_s) == 0):
+            return (self.static_eval(state), None)
+
+        # checking whose move it is
+        if (state.whose_move == 'X'):
+            is_max = True
+        else:
+            is_max = False
+
+        if is_max:
+            best_val = float('-inf')
+        else:
+            best_val = float('inf')
+
+        best_move = None
+
+        for successor, move in zip(possible_s, possible_m):
+            curr_val, _ = self.minimax(successor, depth_remaining-1, pruning, alpha, beta)
+
+            if is_max: # for X
+                if curr_val > best_val:
+                    best_val = curr_val
+                    best_move = move
+
+                ## here is the alpha part
+                if (pruning and (alpha is not None)):
+                    alpha = max(alpha, curr_val)
+                    if (beta is not None and (alpha >= beta)):
+                        break
+            else: # O
+                if curr_val < best_val:
+                    best_val = curr_val
+                    best_move = move
+
+                ## beta part
+                if (pruning and (beta is not None)):
+                    beta = min(beta, curr_val)
+                    if (alpha is not None and (beta <= alpha)):
+                        break
+
+        return [best_val, best_move]
         # Only the score is required here but other stuff can be returned
         # in the list, after the score, in case you want to pass info
         # back from recursive calls that might be used in your utterances,
-        # etc. 
- 
+        # etc.
+
     def static_eval(self, state, game_type=None):
-        print('calling static_eval. Its value needs to be computed!')
+        #print('calling static_eval. Its value needs to be computed!')
         # Values should be higher when the states are better for X,
         # lower when better for O.
+
+        ## Note for Ivonne:
+        # in static_eval, you were using like board[i,j] but that would only work if
+        # our board was np.array, but I fixed it to the normal board[i][j] which
+        # works whenever.
 
         board = state.board
         # check the current game type
@@ -200,21 +267,21 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             helper_check(board[i])
         # traverse through the columns
         for j in range(m):
-            helper_check([board[i, j] for i in range(n)])
+            helper_check([board[i][j] for i in range(n)])
         # traverse through the diagonals
         # down-right traverse
         for row in range(n):
             diag = []
             i,j = row,0
             while i < n and j < m:
-                diag.append(board[i, j])
+                diag.append(board[i][j])
                 i,j = i+1,j+1
             helper_check(diag)
         for col in range(m):
             diag = []
             i,j = 0,col
             while i < n and j < m:
-                diag.append(board[i, j])
+                diag.append(board[i][j])
                 i,j = i+1,j+1
             helper_check(diag)
         # down-left traverse
@@ -222,14 +289,14 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             diag = []
             i,j = row,m-1
             while i < n and j >= 0:
-                diag.append(board[i, j])
+                diag.append(board[i][j])
                 i,j = i+1,j-1
             helper_check(diag)
         for col in range(m-2, -1, -1):
             diag = []
             i,j = 0,col
             while i < n and j >= 0:
-                diag.append(board[i, j])
+                diag.append(board[i][j])
                 i,j = i+1,j-1
             helper_check(diag)
 
