@@ -185,9 +185,10 @@ def test():
     # which is a "twin".
 
     import yourUWNetID_KInARow as h
-    #import RandomPlayer as h
+    import RandomPlayer as h2
     px = h.OurAgent()
-    po = h.OurAgent(twin=True)
+    #po = h.OurAgent(twin=True)
+    po = h2.OurAgent() # using the random agent
     set_players(px, po)
     print("Players are set.")
     print("Now let's run the game.")
