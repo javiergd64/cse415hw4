@@ -306,7 +306,6 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # etc.
 
     def static_eval(self, state, game_type=None):
-        #print('calling static_eval. Its value needs to be computed!')
         # Values should be higher when the states are better for X,
         # lower when better for O.
 
@@ -386,6 +385,86 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # return 0 if no winner
         return score
 
+    # FOR LLM TO CHECK STATE
+    def static_eval_LLM(self, state, game_type=None):
+        # Values should be higher when the states are better for X,
+        # lower when better for O.
+
+        ## Note for Ivonne:
+        # in static_eval, you were using like board[i,j] but that would only work if
+        # our board was np.array, but I fixed it to the normal board[i][j] which
+        # works whenever.
+
+        board = state.board
+        # check the current game type
+        if game_type is None:
+            k = self.current_game_type.k
+        else:
+            k = game_type.k
+
+        n = len(board) # row
+        m = len(board[0]) # column
+        # I changed this to how its seen in the winTesterForK
+
+        score = 0 # initialize score
+
+        # helper for rows and columns checks
+        def helper_check(seq):
+            nonlocal score
+            count = 0
+            current = None
+            for token in seq + ['$']: # dummie node to end the loop
+                if token == current and token in ['X', 'O']:
+                    count += 1
+                else:
+                    if current == 'X':
+                        score += 10 ** count
+                    elif current == 'O':
+                        score -= 10 ** count
+                    current = token
+                    count = 1 if token in ['X', 'O'] else 0
+
+        # traverse through the rows
+        for i in range(n):
+            helper_check(board[i])
+        # traverse through the columns
+        for j in range(m):
+            helper_check([board[i][j] for i in range(n)])
+        # traverse through the diagonals
+        # down-right traverse
+        for row in range(n):
+            diag = []
+            i,j = row,0
+            while i < n and j < m:
+                diag.append(board[i][j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        for col in range(m):
+            diag = []
+            i,j = 0,col
+            while i < n and j < m:
+                diag.append(board[i][j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        # down-left traverse
+        for row in range(n):
+            diag = []
+            i,j = row,m-1
+            while i < n and j >= 0:
+                diag.append(board[i][j])
+                i,j = i+1,j-1
+            helper_check(diag)
+        for col in range(m-2, -1, -1):
+            diag = []
+            i,j = 0,col
+            while i < n and j >= 0:
+                diag.append(board[i][j])
+                i,j = i+1,j-1
+            helper_check(diag)
+
+        # return 0 if no winner
+        return score
+
     def generate_utterance(self, state, move, current_remark):
         if not self.utterances_matter:
             return "OK"
@@ -393,7 +472,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         if not self.use_llm:
             return "Beep boop! Running evaluations."
 
-        curr_score = self.sf(state)
+        curr_score = self.static_eval_LLM(state)
         side = self.who_i_play
 
 
