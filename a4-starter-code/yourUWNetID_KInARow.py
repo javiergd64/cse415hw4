@@ -37,10 +37,10 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         if twin: self.nickname += ' Junior'
         self.long_name = 'Dwight K. Schrute'
         if twin: self.long_name += ' Jr'
-        self.persona = 'bland'
+        self.persona = 'Dwight'
 
         # PRE-LLM
-        # some quick lines for prompts, will be used in generate_utterance
+        # some quick lines for prompts, no longer used
         self.generic_lines = [
             "Beep boop… thinking about grids again.",
             "Just another day optimizing my circuits.",
