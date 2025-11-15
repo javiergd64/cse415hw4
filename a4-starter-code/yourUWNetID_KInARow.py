@@ -150,6 +150,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                   use_zobrist_hashing=False, max_ply=3,
                   special_static_eval_fn=None):
 
+        t_0 = time.time()
         ## for autograder thingy:
         ## add something to account for autograder function
         self.sf = self.static_eval
@@ -182,7 +183,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             alpha = float('-inf')
             beta = float('inf')
 
-        value, best_move = self.minimax(current_state, max_ply, use_alpha_beta, alpha, beta)
+        t_left = time_limit - (time.time() - t_0)
+
+        value, best_move = self.minimax(current_state, max_ply, use_alpha_beta, alpha, beta, time_limit=t_left, t_0 = t_0)
         idx = possible_m.index(best_move)
         new_s = possible_s[idx]
         new_m = best_move
@@ -212,9 +215,15 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             depth_remaining,
             pruning=False,
             alpha=None,
-            beta=None):
+            beta=None,
+            time_limit=None,
+            t_0 = None):
         #print("Calling minimax. We need to implement its body.")
         # default_score = 0 # Value of the passed-in state. Needs to be computed.
+
+        # time limit case:
+        if ((time_limit is not None) and ((time.time() - t_0) >= time_limit)):
+            return (self.sf(state), None)
 
         # base case
         if depth_remaining == 0:
