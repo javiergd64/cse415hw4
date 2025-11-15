@@ -33,9 +33,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
 
     def __init__(self, twin=False):
         self.twin=twin
-        self.nickname = 'Beep-Bop'
+        self.nickname = 'Dwight'
         if twin: self.nickname += '2'
-        self.long_name = 'Beep-Boop-Bop'
+        self.long_name = 'Dwight K. Scrute'
         if twin: self.long_name += ' II'
         self.persona = 'bland'
 
@@ -81,10 +81,11 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.genai = None
 
     def introduce(self):
-        intro = '\nHey! My name is Beep-Boop-Bop\n'+\
-            'Javier (javiergd) & Ivonne (yimenz5) made me\n'+\
-            'Hopefully we have a good time playing!\n'
-        if self.twin: intro += "By the way, I'm the TWIN.\n"
+        intro = '\nI\'m Dwight, but you already knew that.\n'+\
+                'Unfortunately, I\'m not the real Dwight, only a miserable attempt at\n'+\
+                'cloning by Javier (javiergd) & Ivonne (yimenz5)\n'+\
+                'Just know, you\'re going down!!!'
+        if self.twin: intro += "Well, I'm Junior.\n"
         return intro
 
     # Receive and acknowledge information about the game from
@@ -361,30 +362,6 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         # return 0 if no winner
         return score
 
-    def build_prompt(self, state, move, current_remark):
-        score = self.sf(state)
-        return [
-            {
-                "type": "message",
-                "role": "developer",
-                "content": (
-                        "You are Beep-Boop-Bop, a playful, nerdy robot agent "
-                        "created by Javier (javiergd) and Ivonne (yimenz5). "
-                        "You always speak in one short, witty sentence. "
-                        "Never break character. Never mention being an AI model."
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Opponent said: '{current_remark}'.\n"
-                    f"Your last move: {move}.\n"
-                    f"Board heuristic score: {score}.\n"
-                    "Respond with exactly one short sentence in character."
-                )
-            }
-        ]
-
     def generate_utterance(self, state, move, current_remark):
         if not self.utterances_matter:
             return "OK"
@@ -392,12 +369,25 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         if not self.use_llm:
             return "Beep boop! Running evaluations."
 
+        curr_score = self.sf(state)
+
+
         prompt = (
-            "You are Beep-Boop-Bop, a playful, nerdy robot created by Javier and Ivonne. "
-            "Always respond in ONE short, witty sentence.\n"
-            "Let the conversation be aggressive.\n"
+            "Your name is Dwight Schrute"
+            "You are an agent that wants to win at K-in-a-row. "
+            "Therefore, assume the role of Dwight Scrute, "
+            "making sure to pull from his most iconic lines, "
+            "the beet farm, and occasionally referring to opponents mistakes as something Toby Flenderson (from The Office) would do." 
+            "Always respond in a single, short length sentence. State your move, followed by your comment"
+            "You can be aggressive, but also be considerate as Dwight wants to be seen as threatening, but isnt. "
+            "You can make a threat, such as using ninja stars, ninja daggers, pepper spraying, running someone over," 
+            "setting someones house on fire or bring up a reference from The Office." 
+            "If you win or feel like you are close to winning, make an immature comment and brag about the win "
+            "while considering "
+            f"the current score '{curr_score}'"
             f"Opponent said: '{current_remark}'.\n"
-            f"Your move: {move}.\n"
+            f"Make sure to announce you move, on: {move}. in some sort of overly dramatic way\n"
+            "and make variations of that"
             "Reply in character:"
         )
 
@@ -410,11 +400,11 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                 if utter:
                     return utter
 
-            return "Beep boop! My wires got crossed."
+            return "Wait, who am I?"
 
         except Exception as e:
             print("Gemini utterance error:", type(e).__name__, e)
-            return "Beep boop! Running evaluations."
+            return "Uh... I can\'t think of anything smart. I feel like Toby."
 
 
 # OPTIONAL THINGS TO KEEP TRACK OF:
