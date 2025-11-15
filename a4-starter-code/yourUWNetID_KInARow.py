@@ -34,9 +34,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
     def __init__(self, twin=False):
         self.twin=twin
         self.nickname = 'Dwight'
-        if twin: self.nickname += '2'
+        if twin: self.nickname += ' Junior'
         self.long_name = 'Dwight K. Schrute'
-        if twin: self.long_name += ' II'
+        if twin: self.long_name += ' Jr'
         self.persona = 'bland'
 
         # PRE-LLM
@@ -109,7 +109,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
                 'Unfortunately, I\'m not the real Dwight, only a miserable attempt at\n'+\
                 'cloning by Javier (javiergd) & Ivonne (yimenz5)\n'+\
                 'Just know, you\'re going down!!!\n'
-        if self.twin: intro += "Well, I'm Junior.\n"
+        if self.twin: intro += "Well, I'm Junior, Dwight Junior, a clone of the clone.\n"
         return dwight + intro
 
     # Receive and acknowledge information about the game from
@@ -142,7 +142,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         GAME_TYPE = game_type
         self.current_game_type = game_type
 
-        print("Dang, I love playing", game_type.long_name)
+        print("YOU are going DOWNNNN", game_type.long_name)
         self.my_past_utterances = []
         self.opponent_past_utterances = []
         self.repeat_count = 0
