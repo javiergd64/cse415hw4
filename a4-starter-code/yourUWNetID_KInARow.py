@@ -201,7 +201,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
 
         # for autograder case cuz it need stats
         # 0 = demo, 1 = competitive, 2 = autograder
-        if self.playing_mode == 2:
+        if self.playing_mode == KAgent.AUTOGRADER:
             return [[new_m, new_s] + stats, utter]
 
         return [[new_m, new_s], utter]
@@ -248,7 +248,8 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         best_move = None
 
         for successor, move in zip(possible_s, possible_m):
-            curr_val, _ = self.minimax(successor, depth_remaining-1, pruning, alpha, beta)
+
+            curr_val, _ = self.minimax(successor, depth_remaining-1, pruning, alpha, beta, time_limit, t_0)
 
             if is_max: # for X
                 if curr_val > best_val:
