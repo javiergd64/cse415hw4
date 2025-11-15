@@ -1,0 +1,8 @@
+NOTE: This is also in report.
+8. Extra Credit Implemented
+1. Custom static_eval() Function
+We wrote our own static evaluation function instead of using the simple version from the starter code. This function looks at every row, column, and diagonal, and counts how many X’s or O’s appear in a row. 
+Longer streaks are worth more (using powers of 10), so the agent can recognize when a line is close to winning. As a result, its minimax search makes smarter decisions even with a small search depth. 
+2. LLM-Based Dialogue System
+We integrated Google’s gemini-2.5-flash model so our agent can speak in character with our prompt instead of using only hard-coded lines. We tried to use OpenAI, but it wasnt working for us, so we turned to Gemini. Ivonne put her credit card into the Gemini API so that we wouldn’t worry about exceeding any limits. Of course, it was just to use the free trial and then hit cancel in a week or two. 
+By using Gemini, we made sure to not make responses too long, and to keep them relevant and consistent to the character of Dwight. 

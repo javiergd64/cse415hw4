@@ -1,0 +1,569 @@
+'''
+javiergd_KInARow.py
+Authors: Guapilla-Diaz, Javier; Zhang, Ivonne
+
+An agent for playing "K-in-a-Row with Forbidden Squares" and related games.
+CSE 415, University of Washington
+'''
+# from mpmath.functions.zetazeros import count_to
+# from pythonjsonlogger.msgspec import msgspec_default
+
+from agent_base import KAgent
+from game_types import State, Game_Type
+# import game_types # idk why it didnt work, but changed it to random player import
+# ^NOTE, it didnt work b/c when I copied make_move() from random_player,
+# I forgot to change its argument of:
+# news = game_types.State to just State
+from random import randint # for the random choosing (before mM or ab)
+#GAME_TYPE = None not needed bc of GLOBAL in prepare
+
+AUTHORS = 'Javier Guapilla-Diaz; Ivonne Zhang'
+UWNETIDS = ['javiergd', 'yimenz5'] # The first UWNetID here should
+# match the one in the file name, e.g., janiesmith99_KInARow.py.
+
+import time
+
+# You'll probably need this to avoid losing a
+# game due to exceeding a time limit.
+
+# Create your own type of agent by subclassing KAgent:
+
+class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
+    # knows how to instantiate your agent class.
+
+    def __init__(self, twin=False):
+        self.twin=twin
+        self.nickname = 'Dwight'
+        if twin: self.nickname += ' Junior'
+        self.long_name = 'Dwight K. Schrute'
+        if twin: self.long_name += ' Jr'
+        self.persona = 'Dwight'
+
+        # PRE-LLM
+        # some quick lines for prompts, no longer used
+        self.generic_lines = [
+            "Beep boop… thinking about grids again.",
+            "Just another day optimizing my circuits.",
+            "I hope you’re enjoying this as much as my CPU is."
+        ]
+        self.confident_lines = [
+            "My sensors detect a strong position for me.",
+            "I like where this is going for X.",
+            "Heh, that line is almost complete…"
+        ]
+        self.defensive_lines = [
+            "That last move from you was dangerous. I had to block.",
+            "You almost had me there—almost.",
+            "I’m patching that weakness in my defenses."
+        ]
+        self.stats_lines = [
+            "I evaluated {evals} states and pruned {cuts} branches.",
+            "This turn cost me {evals} evals and {cuts} cutoffs. Worth it.",
+            "My alpha-beta engine pruned {cuts} possibilities this move."
+        ]
+
+        self.voice_info = {'Chrome': 10, 'Firefox': 2, 'other': 0}
+        self.playing = "don't know yet" # e.g., "X" or "O".
+        self.alpha_beta_cutoffs_this_turn = -1
+        self.num_static_evals_this_turn = -1
+        self.zobrist_table_num_entries_this_turn = -1
+        self.zobrist_table_num_hits_this_turn = -1
+        self.current_game_type = None
+        self.playing_mode = KAgent.DEMO
+        # more initialization from random plater
+        self.my_past_utterances = None
+        self.opponent_past_utterances = None
+        self.utt_count = None
+        self.repeat_count = None
+        # for LLM use???
+        self.use_llm = False
+        self.utterances_matter = True
+        self.genai = None
+
+    def introduce(self):
+        dwight = """
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⢟⣿⣿⣿⣿⣿⣷⣶⣿⣶⣤⣀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⢀⣜⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠀⠀
+        ⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆⠀⠀
+        ⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠁⠀⠀⠀⠉⠛⢿⣿⣿⣿⣿⣿⡆⠀
+        ⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⠧⠀⠀⠀⠀⠀⠀⠀⠀⠹⣷⣿⣽⣿⣿⡀
+        ⠀⠀⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢛⣽⣿⣿⣿⡇
+        ⠀⠀⣿⣿⣿⣿⣿⣿⣿⣧⠈⠻⠿⠆⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⣿⣿⣿⣇
+        ⠀⠀⣿⣿⣿⡟⠹⠻⠟⢻⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⣿⠟⣿⣿⡿
+        ⠀⢠⣿⣿⣿⣧⡀⢀⣀⡤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣄⡀⢻⣿⠃
+        ⠀⠀⣿⢹⣿⠀⠱⢿⣁⣭⢿⣿⣿⣯⡻⢻⠩⣿⣿⣿⣿⣿⢿⣾⡷⢸⡿⠀
+        ⠀⠀⢹⡜⣿⠀⠀⠸⠉⠑⠨⢭⣾⡏⣸⠏⠀⢸⣯⠛⠬⠯⢾⡏⠀⣼⠃⠀
+        ⠀⠀⠀⢿⣿⡇⠀⠀⠁⠀⠀⠀⠀⢤⠊⠀⠀⠈⣏⠣⠀⣀⡀⠤⠊⢸⠀⠀
+        ⠀⠀⠀⠘⢿⣿⡀⠀⠀⠀⠀⠀⠀⢀⣤⣤⣀⣤⣿⡄⠀⠀⠀⠀⢰⣿⠀⠀
+        ⠀⠀⠀⠀⠈⡏⠓⠀⠀⠀⠀⠀⠀⠀⠉⠉⠟⠉⠉⠀⠀⠀⡀⠀⠸⠃⠀⠀
+        ⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀⠀⢀⣀⣠⠴⠦⠤⠦⣄⡀⠀⢰⠁⠀⠇⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠸⣿⣄⠀⠀⠀⠀⠀⠀⠶⠶⠶⠶⠀⠀⠠⠃⢀⠎⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⣿⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡂⠀⠀⠀⠀⠀
+        ⠀⠀⠀⢀⣤⢺⡏⠙⠿⣄⠑⠂⠤⢤⣄⣀⣀⣤⠤⠐⠁⣸⢹⣷⣄⠀⠀⠀
+        ⣀⣤⣾⣿⣿⠀⠻⣄⠀⠀⠉⠒⠂⠀⢀⣀⣀⣀⣠⣤⡾⠃⢸⣿⣿⣷⣦⣀
+        """
+        # art from: https://emojicombos.com/dwight-schrute-ascii-art cuz credit to artist!!!
+
+        intro = '\nI\'m Dwight, but you already knew that.\n'+\
+                'Unfortunately, I\'m not the real Dwight, only a miserable attempt at\n'+\
+                'cloning by Javier (javiergd) & Ivonne (yimenz5)\n'+\
+                'Just know, you\'re going down!!!\n'
+        if self.twin: intro += "Well, I'm Junior, Dwight Junior, a clone of the clone.\n"
+        return dwight + intro
+
+    # Receive and acknowledge information about the game from
+    # the game master:
+    def prepare(
+        self,
+        game_type,
+        what_side_to_play,
+        opponent_nickname,
+        expected_time_per_move = 0.1, # Time limits can be
+                                      # changed mid-game by the game master.
+
+        utterances_matter=True):      # If False, just return 'OK' for each utterance,
+                                      # or something simple and quick to compute
+                                      # and do not import any LLM or special APIs.
+                                      # During the tournament, this will be False..
+        # if utterances_matter:
+        #     pass
+            # Optionally, import your LLM API here.
+            # Then you can use it to help create utterances.
+
+        # Write code to save the relevant information in variables
+        # local to this instance of the agent.
+        # Game-type info can be in global variables.
+
+        self.who_i_play = what_side_to_play
+        self.opponent_nickname = opponent_nickname
+        self.time_limit = expected_time_per_move
+        global GAME_TYPE
+        GAME_TYPE = game_type
+        self.current_game_type = game_type
+
+        print("YOU are going DOWNNNN in this game of", game_type.long_name)
+        self.my_past_utterances = []
+        self.opponent_past_utterances = []
+        self.repeat_count = 0
+        self.utt_count = 0
+        if self.twin: self.utt_count = 5  # Offset the twin's utterances.
+
+        if utterances_matter:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key="AIzaSyA6OacwuB1pG5cbbLTjFdxaMFucWDueGBw")
+                self.genai = genai
+                self.use_llm = True
+                print("Gemini initialized!")
+            except Exception as e:
+                print("Gemini init failed:", e)
+                self.genai = None
+                self.use_llm = False
+        else:
+            self.genai = None
+            self.use_llm = False
+        # print("Change this to return 'OK' when ready to test the method.")
+        return "OK" #"Not-OK"
+
+    # working on this first -j
+    # note for ivonne: I used the random player for layout and initial
+    # "test" of randomness
+    # The core of your agent's ability should be implemented here:
+    def make_move(self, current_state, current_remark, time_limit=1000,
+                  use_alpha_beta=True, #True, uncomment for later
+                  use_zobrist_hashing=False, max_ply=3,
+                  special_static_eval_fn=None):
+
+        t_0 = time.time()
+        ## for autograder thingy:
+        ## add something to account for autograder function
+        self.sf = self.static_eval
+
+        if (special_static_eval_fn is not None):
+            self.sf = special_static_eval_fn
+
+        # for the stats that we have to report
+        self.alpha_beta_cutoffs_this_turn = 0
+        self.num_static_evals_this_turn = 0
+        # note: i am not updating the zobrist vars bc not used rn
+
+        # a list of places we can go, and the move associated
+        possible_s, possible_m = successors_and_moves(current_state)
+        # S is state and M is move
+
+        # successors empty = can't go anywhere, so cant do anything
+        if (len(possible_s) == 0):
+            utter = "Welp, I'm cornered"
+            return [[None, current_state], utter]
+
+        # this is to test w/o minimax or ab, so like random
+        # new_S, new_M = chooseMove((possible_s, possible_m))
+
+        # using mm and ab
+        alpha = None
+        beta = None
+
+        if use_alpha_beta:
+            alpha = float('-inf')
+            beta = float('inf')
+
+        t_left = time_limit - (time.time() - t_0)
+
+        value, best_move = self.minimax(current_state, max_ply, use_alpha_beta, alpha, beta, time_limit=t_left, t_0 = t_0)
+        idx = possible_m.index(best_move)
+        new_s = possible_s[idx]
+        new_m = best_move
+
+        # from agent_base btw
+        stats = [self.alpha_beta_cutoffs_this_turn,
+                 self.num_static_evals_this_turn,
+                 self.zobrist_table_num_entries_this_turn,
+                 self.zobrist_table_num_hits_this_turn]
+
+        # utter = "TEST UTTERANCE" # for now cuz we will use llm?
+        utter = self.generate_utterance(new_s, new_m, current_remark)
+
+        # for autograder case cuz it need stats
+        # 0 = demo, 1 = competitive, 2 = autograder
+        if self.playing_mode == KAgent.AUTOGRADER:
+            return [[new_m, new_s] + stats, utter]
+
+        return [[new_m, new_s], utter]
+
+
+    # next chunk
+    # -------------------------------------------------------------------- #
+    # The main adversarial search function:
+    def minimax(self,
+            state,
+            depth_remaining,
+            pruning=False,
+            alpha=None,
+            beta=None,
+            time_limit=None,
+            t_0 = None):
+        #print("Calling minimax. We need to implement its body.")
+        # default_score = 0 # Value of the passed-in state. Needs to be computed.
+
+        # time limit case:
+        if ((time_limit is not None) and ((time.time() - t_0) >= time_limit)):
+            return (self.sf(state), None)
+
+        # base case
+        if depth_remaining == 0:
+            return (self.sf(state), None)
+
+        possible_s, possible_m = successors_and_moves(state)
+
+        if (len(possible_s) == 0):
+            return (self.sf(state), None)
+
+        # checking whose move it is
+        if (state.whose_move == 'X'):
+            is_max = True
+        else:
+            is_max = False
+
+        if is_max:
+            best_val = float('-inf')
+        else:
+            best_val = float('inf')
+
+        best_move = None
+
+        for successor, move in zip(possible_s, possible_m):
+
+            curr_val, _ = self.minimax(successor, depth_remaining-1, pruning, alpha, beta, time_limit, t_0)
+
+            if is_max: # for X
+                if curr_val > best_val:
+                    best_val = curr_val
+                    best_move = move
+
+                ## here is the alpha part
+                if (pruning and (alpha is not None)):
+                    alpha = max(alpha, curr_val)
+                    if (beta is not None and (alpha >= beta)):
+                        self.alpha_beta_cutoffs_this_turn += 1
+                        break
+            else: # O
+                if curr_val < best_val:
+                    best_val = curr_val
+                    best_move = move
+
+                ## beta part
+                if (pruning and (beta is not None)):
+                    beta = min(beta, curr_val)
+                    if (alpha is not None and (beta <= alpha)):
+                        self.alpha_beta_cutoffs_this_turn += 1
+                        break
+
+        return [best_val, best_move]
+        # Only the score is required here but other stuff can be returned
+        # in the list, after the score, in case you want to pass info
+        # back from recursive calls that might be used in your utterances,
+        # etc.
+
+    def static_eval(self, state, game_type=None):
+        # Values should be higher when the states are better for X,
+        # lower when better for O.
+
+        ## Note for Ivonne:
+        # in static_eval, you were using like board[i,j] but that would only work if
+        # our board was np.array, but I fixed it to the normal board[i][j] which
+        # works whenever.
+        self.num_static_evals_this_turn += 1
+
+        board = state.board
+        # check the current game type
+        if game_type is None:
+            k = self.current_game_type.k
+        else:
+            k = game_type.k
+
+        n = len(board) # row
+        m = len(board[0]) # column
+        # I changed this to how its seen in the winTesterForK
+
+        score = 0 # initialize score
+
+        # helper for rows and columns checks
+        def helper_check(seq):
+            nonlocal score
+            count = 0
+            current = None
+            for token in seq + ['$']: # dummie node to end the loop
+                if token == current and token in ['X', 'O']:
+                    count += 1
+                else:
+                    if current == 'X':
+                        score += 10 ** count
+                    elif current == 'O':
+                        score -= 10 ** count
+                    current = token
+                    count = 1 if token in ['X', 'O'] else 0
+
+        # traverse through the rows
+        for i in range(n):
+            helper_check(board[i])
+        # traverse through the columns
+        for j in range(m):
+            helper_check([board[i][j] for i in range(n)])
+        # traverse through the diagonals
+        # down-right traverse
+        for row in range(n):
+            diag = []
+            i,j = row,0
+            while i < n and j < m:
+                diag.append(board[i][j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        for col in range(m):
+            diag = []
+            i,j = 0,col
+            while i < n and j < m:
+                diag.append(board[i][j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        # down-left traverse
+        for row in range(n):
+            diag = []
+            i,j = row,m-1
+            while i < n and j >= 0:
+                diag.append(board[i][j])
+                i,j = i+1,j-1
+            helper_check(diag)
+        for col in range(m-2, -1, -1):
+            diag = []
+            i,j = 0,col
+            while i < n and j >= 0:
+                diag.append(board[i][j])
+                i,j = i+1,j-1
+            helper_check(diag)
+
+        # return 0 if no winner
+        return score
+
+    # FOR LLM TO CHECK STATE
+    def static_eval_LLM(self, state, game_type=None):
+        # Values should be higher when the states are better for X,
+        # lower when better for O.
+
+        ## Note for Ivonne:
+        # in static_eval, you were using like board[i,j] but that would only work if
+        # our board was np.array, but I fixed it to the normal board[i][j] which
+        # works whenever.
+
+        board = state.board
+        # check the current game type
+        if game_type is None:
+            k = self.current_game_type.k
+        else:
+            k = game_type.k
+
+        n = len(board) # row
+        m = len(board[0]) # column
+        # I changed this to how its seen in the winTesterForK
+
+        score = 0 # initialize score
+
+        # helper for rows and columns checks
+        def helper_check(seq):
+            nonlocal score
+            count = 0
+            current = None
+            for token in seq + ['$']: # dummie node to end the loop
+                if token == current and token in ['X', 'O']:
+                    count += 1
+                else:
+                    if current == 'X':
+                        score += 10 ** count
+                    elif current == 'O':
+                        score -= 10 ** count
+                    current = token
+                    count = 1 if token in ['X', 'O'] else 0
+
+        # traverse through the rows
+        for i in range(n):
+            helper_check(board[i])
+        # traverse through the columns
+        for j in range(m):
+            helper_check([board[i][j] for i in range(n)])
+        # traverse through the diagonals
+        # down-right traverse
+        for row in range(n):
+            diag = []
+            i,j = row,0
+            while i < n and j < m:
+                diag.append(board[i][j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        for col in range(m):
+            diag = []
+            i,j = 0,col
+            while i < n and j < m:
+                diag.append(board[i][j])
+                i,j = i+1,j+1
+            helper_check(diag)
+        # down-left traverse
+        for row in range(n):
+            diag = []
+            i,j = row,m-1
+            while i < n and j >= 0:
+                diag.append(board[i][j])
+                i,j = i+1,j-1
+            helper_check(diag)
+        for col in range(m-2, -1, -1):
+            diag = []
+            i,j = 0,col
+            while i < n and j >= 0:
+                diag.append(board[i][j])
+                i,j = i+1,j-1
+            helper_check(diag)
+
+        # return 0 if no winner
+        return score
+
+    def generate_utterance(self, state, move, current_remark):
+        if not self.utterances_matter:
+            return "OK"
+
+        if not self.use_llm:
+            return "Beep boop! Running evaluations."
+
+        curr_score = self.static_eval_LLM(state)
+        side = self.who_i_play
+
+
+        prompt = (
+            "Your name is Dwight Schrute"
+            "You are an agent that wants to win at K-in-a-row. "
+            "Therefore, assume the role of Dwight Scrute, "
+            "making sure to pull from his most iconic lines, "
+            "the beet farm, and occasionally referring to opponents mistakes as something Toby Flenderson (from The Office) would do." 
+            "Always respond in a single, short length sentence. State your move, followed by your comment"
+            "You can be aggressive, but also be considerate as Dwight wants to be seen as threatening, but isnt. "
+            "You can make a threat, such as using ninja stars, ninja daggers, pepper spraying, running someone over," 
+            "setting someones house on fire or bring up a reference from The Office." 
+            "If you win or feel like you are close to winning, make an immature comment and brag about the win "
+            "while considering "
+            f"the current score '{curr_score}'"
+            f"as well as your score, where more positive is for X and more negative is for O, this is your sign: {side}"
+            f"Opponent said: '{current_remark}'.\n"
+            f"Make sure to announce you move and start your side {side}, on: {move}. in some sort of overly dramatic way\n"
+            "and make variations of that"
+            "Reply in character:"
+        )
+
+        try:
+            model = self.genai.GenerativeModel("models/gemini-2.5-flash")
+            response = model.generate_content(prompt)
+
+            if hasattr(response, "text") and response.text:
+                utter = response.text.strip()
+                if utter:
+                    return utter
+
+            return "Wait, who am I?"
+
+        except Exception as e:
+            print("Gemini utterance error:", type(e).__name__, e)
+            return "Uh... I can\'t think of anything smart. I feel like Toby."
+
+
+# OPTIONAL THINGS TO KEEP TRACK OF:
+
+# THESE I GOT FROM RANDOM PLAYER (they seemed useful, at least initially):
+def other(p):
+    if p=='X': return 'O'
+    return 'X'
+
+# Randomly choose a move.
+def chooseMove(statesAndMoves):
+    states, moves = statesAndMoves
+    if states==[]: return None
+    random_index = randint(0, len(states)-1)
+    my_choice = [states[random_index], moves[random_index]]
+    return my_choice
+
+# The following is a Python "generator" function that creates an
+# iterator to provide one move and new state at a time.
+# It could be used in a smarter agent to only generate SOME of
+# of the possible moves, especially if an alpha cutoff or beta
+# cutoff determines that no more moves from this state are needed.
+def move_gen(state):
+    b = state.board
+    p = state.whose_move
+    o = other(p)
+    mCols = len(b[0])
+    nRows = len(b)
+
+    for i in range(nRows):
+        for j in range(mCols):
+            if b[i][j] != ' ': continue
+            news = do_move(state, i, j, o)
+            yield [(i, j), news]
+
+# This uses the generator to get all the successors.
+def successors_and_moves(state):
+    moves = []
+    new_states = []
+    for item in move_gen(state):
+        moves.append(item[0])
+        new_states.append(item[1])
+    return [new_states, moves]
+
+# Performa a move to get a new state.
+def do_move(state, i, j, o):
+            #news = game_types.State(old=state)
+            news = State(old=state)
+            news.board[i][j] = state.whose_move
+            news.whose_move = o
+            return news
+
+#  WHO_MY_OPPONENT_PLAYS = other(WHO_I_PLAY)
+#  MY_PAST_UTTERANCES = []
+#  OPPONENT_PAST_UTTERANCES = []
+#  UTTERANCE_COUNT = 0
+#  REPEAT_COUNT = 0 or a table of these if you are reusing different utterances
