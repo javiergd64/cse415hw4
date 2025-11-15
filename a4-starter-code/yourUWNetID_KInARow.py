@@ -35,7 +35,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.twin=twin
         self.nickname = 'Dwight'
         if twin: self.nickname += '2'
-        self.long_name = 'Dwight K. Scrute'
+        self.long_name = 'Dwight K. Schrute'
         if twin: self.long_name += ' II'
         self.persona = 'bland'
 
@@ -81,12 +81,36 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         self.genai = None
 
     def introduce(self):
+        dwight = """
+        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⢟⣿⣿⣿⣿⣿⣷⣶⣿⣶⣤⣀⠀⠀⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⢀⣜⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠀⠀
+        ⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆⠀⠀
+        ⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠁⠀⠀⠀⠉⠛⢿⣿⣿⣿⣿⣿⡆⠀
+        ⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⠧⠀⠀⠀⠀⠀⠀⠀⠀⠹⣷⣿⣽⣿⣿⡀
+        ⠀⠀⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢛⣽⣿⣿⣿⡇
+        ⠀⠀⣿⣿⣿⣿⣿⣿⣿⣧⠈⠻⠿⠆⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⣿⣿⣿⣇
+        ⠀⠀⣿⣿⣿⡟⠹⠻⠟⢻⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⣿⠟⣿⣿⡿
+        ⠀⢠⣿⣿⣿⣧⡀⢀⣀⡤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣄⡀⢻⣿⠃
+        ⠀⠀⣿⢹⣿⠀⠱⢿⣁⣭⢿⣿⣿⣯⡻⢻⠩⣿⣿⣿⣿⣿⢿⣾⡷⢸⡿⠀
+        ⠀⠀⢹⡜⣿⠀⠀⠸⠉⠑⠨⢭⣾⡏⣸⠏⠀⢸⣯⠛⠬⠯⢾⡏⠀⣼⠃⠀
+        ⠀⠀⠀⢿⣿⡇⠀⠀⠁⠀⠀⠀⠀⢤⠊⠀⠀⠈⣏⠣⠀⣀⡀⠤⠊⢸⠀⠀
+        ⠀⠀⠀⠘⢿⣿⡀⠀⠀⠀⠀⠀⠀⢀⣤⣤⣀⣤⣿⡄⠀⠀⠀⠀⢰⣿⠀⠀
+        ⠀⠀⠀⠀⠈⡏⠓⠀⠀⠀⠀⠀⠀⠀⠉⠉⠟⠉⠉⠀⠀⠀⡀⠀⠸⠃⠀⠀
+        ⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀⠀⢀⣀⣠⠴⠦⠤⠦⣄⡀⠀⢰⠁⠀⠇⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠸⣿⣄⠀⠀⠀⠀⠀⠀⠶⠶⠶⠶⠀⠀⠠⠃⢀⠎⠀⠀⠀⠀
+        ⠀⠀⠀⠀⠀⠀⣿⣿⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡂⠀⠀⠀⠀⠀
+        ⠀⠀⠀⢀⣤⢺⡏⠙⠿⣄⠑⠂⠤⢤⣄⣀⣀⣤⠤⠐⠁⣸⢹⣷⣄⠀⠀⠀
+        ⣀⣤⣾⣿⣿⠀⠻⣄⠀⠀⠉⠒⠂⠀⢀⣀⣀⣀⣠⣤⡾⠃⢸⣿⣿⣷⣦⣀
+        """
+        # art from: https://emojicombos.com/dwight-schrute-ascii-art cuz credit to artist!!!
+
         intro = '\nI\'m Dwight, but you already knew that.\n'+\
                 'Unfortunately, I\'m not the real Dwight, only a miserable attempt at\n'+\
                 'cloning by Javier (javiergd) & Ivonne (yimenz5)\n'+\
-                'Just know, you\'re going down!!!'
+                'Just know, you\'re going down!!!\n'
         if self.twin: intro += "Well, I'm Junior.\n"
-        return intro
+        return dwight + intro
 
     # Receive and acknowledge information about the game from
     # the game master:
