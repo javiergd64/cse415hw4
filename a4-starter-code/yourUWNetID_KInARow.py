@@ -142,7 +142,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
         GAME_TYPE = game_type
         self.current_game_type = game_type
 
-        print("YOU are going DOWNNNN", game_type.long_name)
+        print("YOU are going DOWNNNN in this game of", game_type.long_name)
         self.my_past_utterances = []
         self.opponent_past_utterances = []
         self.repeat_count = 0
@@ -394,6 +394,7 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             return "Beep boop! Running evaluations."
 
         curr_score = self.sf(state)
+        side = self.who_i_play
 
 
         prompt = (
@@ -409,8 +410,9 @@ class OurAgent(KAgent):  # Keep the class name "OurAgent" so a game master
             "If you win or feel like you are close to winning, make an immature comment and brag about the win "
             "while considering "
             f"the current score '{curr_score}'"
+            f"as well as your score, where more positive is for X and more negative is for O, this is your sign: {side}"
             f"Opponent said: '{current_remark}'.\n"
-            f"Make sure to announce you move, on: {move}. in some sort of overly dramatic way\n"
+            f"Make sure to announce you move and start your side {side}, on: {move}. in some sort of overly dramatic way\n"
             "and make variations of that"
             "Reply in character:"
         )
